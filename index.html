@@ -443,38 +443,88 @@
 
                     case 'CURVED POS.':
                         const curvedLetters = new Set('bcdgjopqrsu');
-                        const positions = [...new Set(wordlist.map(w => w.length))].sort((a, b) => a - b);
-                        const allCurvedCombos = [];
+                        const curvedLettersArray = Array.from(curvedLetters);
+                        const letterPairs = [];
                         
-                        // Generate all possible combinations of curved letters for each position
-                        positions.forEach(pos => {
-                            const combos = [];
-                            const curvedLettersArray = Array.from(curvedLetters);
-                            for (let i = 0; i < curvedLettersArray.length; i++) {
-                                for (let j = i + 1; j < curvedLettersArray.length; j++) {
-                                    combos.push(curvedLettersArray[i] + curvedLettersArray[j]);
-                                }
+                        // Generate all possible pairs of curved letters
+                        for (let i = 0; i < curvedLettersArray.length; i++) {
+                            for (let j = i + 1; j < curvedLettersArray.length; j++) {
+                                letterPairs.push(curvedLettersArray[i] + curvedLettersArray[j]);
                             }
-                            allCurvedCombos.push(...combos.map(combo => ({ pos, combo })));
-                        });
+                        }
 
-                        results = allCurvedCombos.map(({ pos, combo }) => {
+                        // Calculate results for each pair
+                        const pairResults = letterPairs.map(pair => {
                             const filtered = wordlist.filter(w => {
-                                if (w.length <= pos) return false;
-                                return combo.split('').includes(w[pos]);
+                                return w.split('').some(letter => pair.includes(letter));
                             });
                             return {
-                                param: `Pos ${pos}: ${combo}`,
+                                param: pair,
                                 wordsLeft: filtered.length,
                                 percentFiltered: 100 * (1 - filtered.length / totalWords)
                             };
                         });
 
-                        // Sort by percent filtered and get top/bottom 10
-                        results.sort((a, b) => b.percentFiltered - a.percentFiltered);
-                        const top10Curved = results.slice(0, 10);
-                        const bottom10Curved = results.slice(-10);
-                        results = [...top10Curved, { param: '...', wordsLeft: '-', percentFiltered: '-' }, ...bottom10Curved];
+                        // Sort by percent filtered
+                        pairResults.sort((a, b) => b.percentFiltered - a.percentFiltered);
+
+                        // Group pairs with the same percentage
+                        const groupedResults = [];
+                        let currentGroup = {
+                            percentFiltered: pairResults[0].percentFiltered,
+                            wordsLeft: pairResults[0].wordsLeft,
+                            pairs: [pairResults[0].param]
+                        };
+
+                        for (let i = 1; i < pairResults.length; i++) {
+                            if (pairResults[i].percentFiltered === currentGroup.percentFiltered) {
+                                currentGroup.pairs.push(pairResults[i].param);
+                            } else {
+                                groupedResults.push({
+                                    param: currentGroup.pairs.length > 1 
+                                        ? `${currentGroup.pairs[0]} (${currentGroup.pairs.length} pairs)` 
+                                        : currentGroup.pairs[0],
+                                    wordsLeft: currentGroup.wordsLeft,
+                                    percentFiltered: currentGroup.percentFiltered,
+                                    allPairs: currentGroup.pairs
+                                });
+                                currentGroup = {
+                                    percentFiltered: pairResults[i].percentFiltered,
+                                    wordsLeft: pairResults[i].wordsLeft,
+                                    pairs: [pairResults[i].param]
+                                };
+                            }
+                        }
+                        groupedResults.push({
+                            param: currentGroup.pairs.length > 1 
+                                ? `${currentGroup.pairs[0]} (${currentGroup.pairs.length} pairs)` 
+                                : currentGroup.pairs[0],
+                            wordsLeft: currentGroup.wordsLeft,
+                            percentFiltered: currentGroup.percentFiltered,
+                            allPairs: currentGroup.pairs
+                        });
+
+                        // Take top 10 results
+                        results = groupedResults.slice(0, 10);
+
+                        // Add click handler to expand grouped pairs
+                        setTimeout(() => {
+                            results.forEach((result, index) => {
+                                if (result.allPairs && result.allPairs.length > 1) {
+                                    const row = document.querySelector(`#results-container tr:nth-child(${index + 2})`);
+                                    if (row) {
+                                        row.style.cursor = 'pointer';
+                                        row.title = 'Click to show all pairs';
+                                        row.addEventListener('click', () => {
+                                            const pairsList = result.allPairs.join(', ');
+                                            row.cells[0].textContent = pairsList;
+                                            row.title = '';
+                                            row.style.cursor = 'default';
+                                        });
+                                    }
+                                }
+                            });
+                        }, 0);
                         break;
 
                     case 'EEE?':
