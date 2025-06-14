@@ -98,18 +98,11 @@
                         </div>
                         <div class="mb-3">
                             <label for="feature" class="form-label">Select feature to analyze:</label>
-                            <select class="form-select" id="feature">
-                                <option value="LENGTH">LENGTH - Filter by word length</option>
-                                <option value="ABCDE">ABCDE - Filter by presence of A, B, C, D, E (all YES)</option>
-                                <option value="NOT IN">NOT IN - Remove words containing any of the specified letters</option>
-                                <option value="MOST FREQUENT">MOST FREQUENT - Keep words where the most frequent letter is X</option>
-                                <option value="LEAST FREQUENT">LEAST FREQUENT - Keep words where the least frequent letter is X</option>
-                                <option value="O?">O? - Keep words containing 'o'</option>
-                                <option value="CURVED POS.">CURVED POS. - Keep words with a curved letter (c,e,o,s) at position N</option>
-                                <option value="EEE?">EEE? - Keep words with exactly three 'e's</option>
-                                <option value="EEEFIRST">EEEFIRST - Keep words starting with 'eee'</option>
-                                <option value="CONS. TOGETHER">CONS. TOGETHER - Keep words with two consonants together</option>
-                                <option value="COLOUR3">COLOUR3 - Keep 3-letter words containing a colour</option>
+                            <select id="feature-select" class="form-select mb-3">
+                                <option value="LENGTH">LENGTH</option>
+                                <option value="COLOUR3">COLOUR3</option>
+                                <option value="ABCDE">ABCDE</option>
+                                <option value="NOT IN">NOT IN</option>
                             </select>
                         </div>
                         <button class="btn btn-primary" onclick="analyzeWords()">Analyze</button>
@@ -296,7 +289,7 @@
                 .split('\n')
                 .map(w => w.trim().toLowerCase())
                 .filter(w => w.length > 0);
-            const feature = document.getElementById('feature').value;
+            const feature = document.getElementById('feature-select').value;
 
             if (wordlist.length === 0) {
                 showError('Please enter some words to analyze');
@@ -421,231 +414,6 @@
                         const top10NotIn = results.slice(0, 10);
                         const bottom10NotIn = results.slice(-10);
                         results = [...top10NotIn, { param: '...', wordsLeft: '-', percentFiltered: '-' }, ...bottom10NotIn];
-                        break;
-
-                    case 'MOST FREQUENT':
-                        const uniqueLetters = [...new Set(wordlist.join(''))].sort();
-                        results = uniqueLetters.map(letter => {
-                            const filtered = filterMostFrequent(wordlist, letter);
-                            return {
-                                param: letter,
-                                wordsLeft: filtered.length,
-                                percentFiltered: 100 * (1 - filtered.length / totalWords)
-                            };
-                        });
-                        break;
-
-                    case 'LEAST FREQUENT':
-                        const uniqueLetters2 = [...new Set(wordlist.join(''))].sort();
-                        results = uniqueLetters2.map(letter => {
-                            const filtered = filterLeastFrequent(wordlist, letter);
-                            return {
-                                param: letter,
-                                wordsLeft: filtered.length,
-                                percentFiltered: 100 * (1 - filtered.length / totalWords)
-                            };
-                        });
-                        break;
-
-                    case 'O?':
-                        // Words with 'o'
-                        const withO = wordlist.filter(w => w.includes('o'));
-                        // Words without 'o'
-                        const withoutO = wordlist.filter(w => !w.includes('o'));
-
-                        results = [
-                            {
-                                param: 'YES',
-                                wordsLeft: withO.length,
-                                percentFiltered: 100 * (1 - withO.length / totalWords)
-                            },
-                            {
-                                param: 'NO',
-                                wordsLeft: withoutO.length,
-                                percentFiltered: 100 * (1 - withoutO.length / totalWords)
-                            }
-                        ];
-                        break;
-
-                    case 'CURVED POS.':
-                        const curvedLetters = new Set('bcdgjopqrsu');
-                        const curvedLettersArray = Array.from(curvedLetters);
-                        const letterPairs = [];
-                        
-                        // Generate all possible pairs of curved letters
-                        for (let i = 0; i < curvedLettersArray.length; i++) {
-                            for (let j = i + 1; j < curvedLettersArray.length; j++) {
-                                letterPairs.push(curvedLettersArray[i] + curvedLettersArray[j]);
-                            }
-                        }
-
-                        // Calculate results for each pair
-                        const pairResults = letterPairs.map(pair => {
-                            const filtered = wordlist.filter(w => {
-                                return w.split('').some(letter => pair.includes(letter));
-                            });
-                            return {
-                                param: pair,
-                                wordsLeft: filtered.length,
-                                percentFiltered: 100 * (1 - filtered.length / totalWords)
-                            };
-                        });
-
-                        // Sort by percent filtered
-                        pairResults.sort((a, b) => b.percentFiltered - a.percentFiltered);
-
-                        // Group pairs with the same percentage
-                        const groupedResults = [];
-                        let currentGroup = {
-                            percentFiltered: pairResults[0].percentFiltered,
-                            wordsLeft: pairResults[0].wordsLeft,
-                            pairs: [pairResults[0].param]
-                        };
-
-                        for (let i = 1; i < pairResults.length; i++) {
-                            if (pairResults[i].percentFiltered === currentGroup.percentFiltered) {
-                                currentGroup.pairs.push(pairResults[i].param);
-                            } else {
-                                groupedResults.push({
-                                    param: currentGroup.pairs.length > 1 
-                                        ? `${currentGroup.pairs[0]} (${currentGroup.pairs.length} pairs)` 
-                                        : currentGroup.pairs[0],
-                                    wordsLeft: currentGroup.wordsLeft,
-                                    percentFiltered: currentGroup.percentFiltered,
-                                    allPairs: currentGroup.pairs
-                                });
-                                currentGroup = {
-                                    percentFiltered: pairResults[i].percentFiltered,
-                                    wordsLeft: pairResults[i].wordsLeft,
-                                    pairs: [pairResults[i].param]
-                                };
-                            }
-                        }
-                        groupedResults.push({
-                            param: currentGroup.pairs.length > 1 
-                                ? `${currentGroup.pairs[0]} (${currentGroup.pairs.length} pairs)` 
-                                : currentGroup.pairs[0],
-                            wordsLeft: currentGroup.wordsLeft,
-                            percentFiltered: currentGroup.percentFiltered,
-                            allPairs: currentGroup.pairs
-                        });
-
-                        // Take top 10 results
-                        results = groupedResults.slice(0, 10);
-
-                        // Add click handler to expand grouped pairs
-                        setTimeout(() => {
-                            results.forEach((result, index) => {
-                                if (result.allPairs && result.allPairs.length > 1) {
-                                    const row = document.querySelector(`#results-container tr:nth-child(${index + 2})`);
-                                    if (row) {
-                                        row.style.cursor = 'pointer';
-                                        row.title = 'Click to show all pairs';
-                                        row.addEventListener('click', () => {
-                                            const pairsList = result.allPairs.join(', ');
-                                            row.cells[0].textContent = pairsList;
-                                            row.title = '';
-                                            row.style.cursor = 'default';
-                                        });
-                                    }
-                                }
-                            });
-                        }, 0);
-                        break;
-
-                    case 'EEE?':
-                        const eSoundLetters = new Set('bcdgptvz');
-                        const filteredEee = wordlist.filter(w => w.length >= 2);
-                        
-                        // Words with 'e' in second position
-                        const withE = filteredEee.filter(w => w[1] === 'e');
-                        // Words with E-sound letter in second position
-                        const withESound = filteredEee.filter(w => eSoundLetters.has(w[1]));
-                        // Words with neither E nor E-sound in second position
-                        const withNeither = filteredEee.filter(w => w[1] !== 'e' && !eSoundLetters.has(w[1]));
-
-                        results = [
-                            {
-                                param: 'E',
-                                wordsLeft: withE.length,
-                                percentFiltered: 100 * (1 - withE.length / totalWords)
-                            },
-                            {
-                                param: 'EEE',
-                                wordsLeft: withESound.length,
-                                percentFiltered: 100 * (1 - withESound.length / totalWords)
-                            },
-                            {
-                                param: 'NO',
-                                wordsLeft: withNeither.length,
-                                percentFiltered: 100 * (1 - withNeither.length / totalWords)
-                            }
-                        ];
-                        break;
-
-                    case 'EEEFIRST':
-                        const eSoundLettersFirst = new Set('bcdgptvz');
-                        const filteredEeeFirst = wordlist.filter(w => w.length >= 1);
-                        
-                        // Words with 'e' in first position
-                        const withEFirst = filteredEeeFirst.filter(w => w[0] === 'e');
-                        // Words with E-sound letter in first position
-                        const withESoundFirst = filteredEeeFirst.filter(w => eSoundLettersFirst.has(w[0]));
-                        // Words with neither E nor E-sound in first position
-                        const withNeitherFirst = filteredEeeFirst.filter(w => w[0] !== 'e' && !eSoundLettersFirst.has(w[0]));
-
-                        results = [
-                            {
-                                param: 'E',
-                                wordsLeft: withEFirst.length,
-                                percentFiltered: 100 * (1 - withEFirst.length / totalWords)
-                            },
-                            {
-                                param: 'EEE',
-                                wordsLeft: withESoundFirst.length,
-                                percentFiltered: 100 * (1 - withESoundFirst.length / totalWords)
-                            },
-                            {
-                                param: 'NO',
-                                wordsLeft: withNeitherFirst.length,
-                                percentFiltered: 100 * (1 - withNeitherFirst.length / totalWords)
-                            }
-                        ];
-                        break;
-
-                    case 'CONS. TOGETHER':
-                        const vowels = new Set('aeiou');
-                        // Words with consecutive consonants
-                        const withConsTogether = wordlist.filter(w => {
-                            for (let i = 0; i < w.length - 1; i++) {
-                                if (!vowels.has(w[i]) && !vowels.has(w[i + 1])) {
-                                    return true;
-                                }
-                            }
-                            return false;
-                        });
-                        // Words without consecutive consonants
-                        const withoutConsTogether = wordlist.filter(w => {
-                            for (let i = 0; i < w.length - 1; i++) {
-                                if (!vowels.has(w[i]) && !vowels.has(w[i + 1])) {
-                                    return false;
-                                }
-                            }
-                            return true;
-                        });
-
-                        results = [
-                            {
-                                param: 'YES',
-                                wordsLeft: withConsTogether.length,
-                                percentFiltered: 100 * (1 - withConsTogether.length / totalWords)
-                            },
-                            {
-                                param: 'NO',
-                                wordsLeft: withoutConsTogether.length,
-                                percentFiltered: 100 * (1 - withoutConsTogether.length / totalWords)
-                            }
-                        ];
                         break;
 
                     case 'COLOUR3':
