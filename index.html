@@ -468,28 +468,62 @@
 
                     case 'EEE?':
                         const eSoundLetters = new Set('bcdgptvz');
-                        const filteredEee = wordlist.filter(w => {
-                            if (w.length < 2) return false;
-                            return w[1] === 'e' || eSoundLetters.has(w[1]);
-                        });
-                        results = [{
-                            param: '-',
-                            wordsLeft: filteredEee.length,
-                            percentFiltered: 100 * (1 - filteredEee.length / totalWords)
-                        }];
+                        const filteredEee = wordlist.filter(w => w.length >= 2);
+                        
+                        // Words with 'e' in second position
+                        const withE = filteredEee.filter(w => w[1] === 'e');
+                        // Words with E-sound letter in second position
+                        const withESound = filteredEee.filter(w => eSoundLetters.has(w[1]));
+                        // Words with neither E nor E-sound in second position
+                        const withNeither = filteredEee.filter(w => w[1] !== 'e' && !eSoundLetters.has(w[1]));
+
+                        results = [
+                            {
+                                param: 'E',
+                                wordsLeft: withE.length,
+                                percentFiltered: 100 * (1 - withE.length / totalWords)
+                            },
+                            {
+                                param: 'EEE',
+                                wordsLeft: withESound.length,
+                                percentFiltered: 100 * (1 - withESound.length / totalWords)
+                            },
+                            {
+                                param: 'NO',
+                                wordsLeft: withNeither.length,
+                                percentFiltered: 100 * (1 - withNeither.length / totalWords)
+                            }
+                        ];
                         break;
 
                     case 'EEEFIRST':
                         const eSoundLettersFirst = new Set('bcdgptvz');
-                        const filteredEeeFirst = wordlist.filter(w => {
-                            if (w.length < 1) return false;
-                            return w[0] === 'e' || eSoundLettersFirst.has(w[0]);
-                        });
-                        results = [{
-                            param: '-',
-                            wordsLeft: filteredEeeFirst.length,
-                            percentFiltered: 100 * (1 - filteredEeeFirst.length / totalWords)
-                        }];
+                        const filteredEeeFirst = wordlist.filter(w => w.length >= 1);
+                        
+                        // Words with 'e' in first position
+                        const withEFirst = filteredEeeFirst.filter(w => w[0] === 'e');
+                        // Words with E-sound letter in first position
+                        const withESoundFirst = filteredEeeFirst.filter(w => eSoundLettersFirst.has(w[0]));
+                        // Words with neither E nor E-sound in first position
+                        const withNeitherFirst = filteredEeeFirst.filter(w => w[0] !== 'e' && !eSoundLettersFirst.has(w[0]));
+
+                        results = [
+                            {
+                                param: 'E',
+                                wordsLeft: withEFirst.length,
+                                percentFiltered: 100 * (1 - withEFirst.length / totalWords)
+                            },
+                            {
+                                param: 'EEE',
+                                wordsLeft: withESoundFirst.length,
+                                percentFiltered: 100 * (1 - withESoundFirst.length / totalWords)
+                            },
+                            {
+                                param: 'NO',
+                                wordsLeft: withNeitherFirst.length,
+                                percentFiltered: 100 * (1 - withNeitherFirst.length / totalWords)
+                            }
+                        ];
                         break;
 
                     case 'CONS. TOGETHER':
