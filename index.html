@@ -378,7 +378,7 @@
                         break;
 
                     case 'NOT IN':
-                        const lettersToRemove = document.getElementById('param-input').value.toLowerCase().split('').filter(l => l.trim() !== '');
+                        const lettersToRemove = document.getElementById('param').value.toLowerCase().split('').filter(l => l.trim() !== '');
                         if (lettersToRemove.length === 0) {
                             alert('Please enter at least one letter to remove');
                             return;
