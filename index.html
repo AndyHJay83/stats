@@ -244,6 +244,14 @@
                 return;
             }
 
+            // Sort results by parameter value
+            results.sort((a, b) => {
+                // Convert parameters to numbers for numerical sorting
+                const paramA = parseFloat(a.param);
+                const paramB = parseFloat(b.param);
+                return paramA - paramB;
+            });
+
             let html = `
                 <div class="mb-3">
                     <strong>Total words analyzed:</strong> ${totalWords}
