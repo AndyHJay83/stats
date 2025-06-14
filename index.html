@@ -295,32 +295,42 @@
                     case 'ABCDE':
                         // Generate all 31 possible combinations of abcde
                         const allCombos = [];
-                        for (let i = 1; i <= 5; i++) {
-                            const combos = [];
-                            const letters = 'abcde';
-                            for (let j = 0; j < letters.length; j++) {
+                        const letters = 'abcde';
+                        
+                        // Single letters (5 combinations)
+                        for (let i = 0; i < letters.length; i++) {
+                            allCombos.push(letters[i]);
+                        }
+                        
+                        // Pairs (10 combinations)
+                        for (let i = 0; i < letters.length; i++) {
+                            for (let j = i + 1; j < letters.length; j++) {
+                                allCombos.push(letters[i] + letters[j]);
+                            }
+                        }
+                        
+                        // Triples (10 combinations)
+                        for (let i = 0; i < letters.length; i++) {
+                            for (let j = i + 1; j < letters.length; j++) {
                                 for (let k = j + 1; k < letters.length; k++) {
-                                    if (i === 1) {
-                                        combos.push(letters[j]);
-                                    } else if (i === 2) {
-                                        combos.push(letters[j] + letters[k]);
-                                    } else if (i === 3) {
-                                        for (let l = k + 1; l < letters.length; l++) {
-                                            combos.push(letters[j] + letters[k] + letters[l]);
-                                        }
-                                    } else if (i === 4) {
-                                        for (let l = k + 1; l < letters.length; l++) {
-                                            for (let m = l + 1; m < letters.length; m++) {
-                                                combos.push(letters[j] + letters[k] + letters[l] + letters[m]);
-                                            }
-                                        }
-                                    } else if (i === 5) {
-                                        combos.push('abcde');
+                                    allCombos.push(letters[i] + letters[j] + letters[k]);
+                                }
+                            }
+                        }
+                        
+                        // Quadruples (5 combinations)
+                        for (let i = 0; i < letters.length; i++) {
+                            for (let j = i + 1; j < letters.length; j++) {
+                                for (let k = j + 1; k < letters.length; k++) {
+                                    for (let l = k + 1; l < letters.length; l++) {
+                                        allCombos.push(letters[i] + letters[j] + letters[k] + letters[l]);
                                     }
                                 }
                             }
-                            allCombos.push(...combos);
                         }
+                        
+                        // All five letters (1 combination)
+                        allCombos.push('abcde');
 
                         results = allCombos.map(combo => {
                             // Get letters that should NOT be in the word
