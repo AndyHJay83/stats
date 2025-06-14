@@ -15,45 +15,34 @@ A web-based tool for analyzing word lists using various filtering features. This
 - Find words with consecutive consonants
 - Find 3-letter words containing color names
 
-## Setup
-
-1. Clone this repository:
-```bash
-git clone https://github.com/yourusername/word-analysis-tool.git
-cd word-analysis-tool
-```
-
-2. Create a virtual environment and activate it:
-```bash
-python -m venv venv
-source venv/bin/activate  # On Windows, use: venv\Scripts\activate
-```
-
-3. Install the required packages:
-```bash
-pip install -r requirements.txt
-```
-
-4. Run the application:
-```bash
-python app.py
-```
-
-5. Open your web browser and navigate to `http://localhost:5000`
-
 ## Usage
 
-1. Enter your word list in the text area (one word per line)
-2. Select a feature to analyze from the dropdown menu
-3. Click "Analyze" to see the results
-4. The results will show:
+1. Visit [https://andyhjay83.github.io/stats/](https://andyhjay83.github.io/stats/)
+2. Enter your word list in the text area (one word per line)
+3. Select a feature to analyze from the dropdown menu
+4. Click "Analyze" to see the results
+5. The results will show:
    - The parameter used
    - Number of words remaining after filtering
    - Percentage of words filtered out
 
-## Deployment
+## How It Works
 
-This application can be deployed on GitHub Pages or any other web hosting service that supports Python/Flask applications.
+This is a client-side application that runs entirely in your browser. No data is sent to any server - all processing happens locally on your device.
+
+## Development
+
+To modify or enhance the application:
+
+1. Clone this repository:
+```bash
+git clone https://github.com/andyhjay83/stats.git
+cd stats
+```
+
+2. Make your changes to `index.html`
+3. Test locally by opening `index.html` in your browser
+4. Commit and push your changes to GitHub
 
 ## License
 

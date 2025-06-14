@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word Analysis Tool</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+
+        .card {
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            border: none;
+        }
+
+        .card-title {
+            color: #2c3e50;
+            font-weight: 600;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: #80bdff;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        }
+
+        .btn-primary {
+            background-color: #007bff;
+            border-color: #007bff;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            background-color: #0056b3;
+            border-color: #0056b3;
+            transform: translateY(-1px);
+        }
+
+        #results-container {
+            min-height: 200px;
+        }
+
+        .results-table {
+            width: 100%;
+            margin-top: 1rem;
+        }
+
+        .results-table th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+        }
+
+        .results-table td, .results-table th {
+            padding: 0.75rem;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .results-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .loading::after {
+            content: '';
+            display: inline-block;
+            width: 2rem;
+            height: 2rem;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #007bff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-5">
+        <h1 class="text-center mb-4">Word Analysis Tool</h1>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title">Input</h5>
+                        <div class="mb-3">
+                            <label for="wordlist" class="form-label">Enter your wordlist (one word per line):</label>
+                            <textarea class="form-control" id="wordlist" rows="10" placeholder="Enter words here..."></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="feature" class="form-label">Select feature to analyze:</label>
+                            <select class="form-select" id="feature">
+                                <option value="LENGTH">LENGTH - Filter by word length</option>
+                                <option value="ABCDE">ABCDE - Filter by presence of A, B, C, D, E (all YES)</option>
+                                <option value="NOT IN">NOT IN - Remove words containing any of the specified letters</option>
+                                <option value="MOST FREQUENT">MOST FREQUENT - Keep words where the most frequent letter is X</option>
+                                <option value="LEAST FREQUENT">LEAST FREQUENT - Keep words where the least frequent letter is X</option>
+                                <option value="O?">O? - Keep words containing 'o'</option>
+                                <option value="CURVED POS.">CURVED POS. - Keep words with a curved letter (c,e,o,s) at position N</option>
+                                <option value="EEE?">EEE? - Keep words with exactly three 'e's</option>
+                                <option value="EEEFIRST">EEEFIRST - Keep words starting with 'eee'</option>
+                                <option value="CONS. TOGETHER">CONS. TOGETHER - Keep words with two consonants together</option>
+                                <option value="COLOUR3">COLOUR3 - Keep 3-letter words containing a colour</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-primary" onclick="analyzeWords()">Analyze</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Results</h5>
+                        <div id="results-container">
+                            <div class="text-center text-muted">
+                                Select a feature and click Analyze to see results
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function filterLength(words, length) {
+            return words.filter(w => w.length === length);
+        }
+
+        function filterAbcde(words, yesLetters) {
+            return words.filter(w => yesLetters.every(l => w.includes(l)));
+        }
+
+        function filterNotIn(words, notLetters) {
+            return words.filter(w => notLetters.every(l => !w.includes(l)));
+        }
+
+        function filterMostFrequent(words, letter) {
+            return words.filter(w => {
+                const counts = {};
+                for (const char of w) {
+                    counts[char] = (counts[char] || 0) + 1;
+                }
+                const maxChar = Object.entries(counts).reduce((a, b) => 
+                    (b[1] > a[1] || (b[1] === a[1] && b[0] > a[0])) ? b : a
+                )[0];
+                return maxChar === letter;
+            });
+        }
+
+        function filterLeastFrequent(words, letter) {
+            return words.filter(w => {
+                const counts = {};
+                for (const char of w) {
+                    counts[char] = (counts[char] || 0) + 1;
+                }
+                const minChar = Object.entries(counts).reduce((a, b) => 
+                    (b[1] < a[1] || (b[1] === a[1] && b[0] < a[0])) ? b : a
+                )[0];
+                return minChar === letter;
+            });
+        }
+
+        function filterOQuestion(words) {
+            return words.filter(w => w.includes('o'));
+        }
+
+        function filterCurvedPos(words, pos) {
+            const curved = new Set('ceos');
+            return words.filter(w => w.length > pos && curved.has(w[pos]));
+        }
+
+        function filterEee(words) {
+            return words.filter(w => (w.match(/e/g) || []).length === 3);
+        }
+
+        function filterEeeFirst(words) {
+            return words.filter(w => w.startsWith('eee'));
+        }
+
+        function filterConsTogether(words) {
+            const vowels = new Set('aeiou');
+            return words.filter(w => {
+                for (let i = 0; i < w.length - 1; i++) {
+                    if (!vowels.has(w[i]) && !vowels.has(w[i + 1])) {
+                        return true;
+                    }
+                }
+                return false;
+            });
+        }
+
+        function filterColour3(words) {
+            const colours = ['red', 'blue', 'green', 'yellow', 'orange', 'purple', 'brown', 'black', 'white', 'pink', 'grey'];
+            return words.filter(w => w.length === 3 && colours.some(col => w.includes(col)));
+        }
+
+        function showLoading() {
+            const resultsContainer = document.getElementById('results-container');
+            resultsContainer.innerHTML = '<div class="loading"></div>';
+        }
+
+        function showError(message) {
+            const resultsContainer = document.getElementById('results-container');
+            resultsContainer.innerHTML = `
+                <div class="alert alert-danger" role="alert">
+                    ${message}
+                </div>
+            `;
+        }
+
+        function displayResults(results, totalWords) {
+            const resultsContainer = document.getElementById('results-container');
+
+            if (results.length === 0) {
+                resultsContainer.innerHTML = '<div class="text-center text-muted">No results found</div>';
+                return;
+            }
+
+            let html = `
+                <div class="mb-3">
+                    <strong>Total words analyzed:</strong> ${totalWords}
+                </div>
+                <table class="results-table">
+                    <thead>
+                        <tr>
+                            <th>Parameter</th>
+                            <th>Words Left</th>
+                            <th>% Filtered</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            results.forEach(result => {
+                html += `
+                    <tr>
+                        <td>${result.param}</td>
+                        <td>${result.wordsLeft}</td>
+                        <td>${result.percentFiltered.toFixed(1)}%</td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                    </tbody>
+                </table>
+            `;
+
+            resultsContainer.innerHTML = html;
+        }
+
+        function analyzeWords() {
+            const wordlist = document.getElementById('wordlist').value
+                .split('\n')
+                .map(w => w.trim().toLowerCase())
+                .filter(w => w.length > 0);
+            const feature = document.getElementById('feature').value;
+
+            if (wordlist.length === 0) {
+                showError('Please enter some words to analyze');
+                return;
+            }
+
+            showLoading();
+
+            try {
+                let results = [];
+                const totalWords = wordlist.length;
+
+                switch (feature) {
+                    case 'LENGTH':
+                        const lengths = [...new Set(wordlist.map(w => w.length))].sort((a, b) => a - b);
+                        results = lengths.map(length => {
+                            const filtered = filterLength(wordlist, length);
+                            return {
+                                param: length.toString(),
+                                wordsLeft: filtered.length,
+                                percentFiltered: 100 * (1 - filtered.length / totalWords)
+                            };
+                        });
+                        break;
+
+                    case 'ABCDE':
+                        const letters = 'abcde';
+                        for (let i = 1; i <= 5; i++) {
+                            for (let j = 0; j < letters.length - i + 1; j++) {
+                                const combo = letters.slice(j, j + i);
+                                const filtered = filterAbcde(wordlist, combo.split(''));
+                                results.push({
+                                    param: combo,
+                                    wordsLeft: filtered.length,
+                                    percentFiltered: 100 * (1 - filtered.length / totalWords)
+                                });
+                            }
+                        }
+                        break;
+
+                    case 'NOT IN':
+                        for (let i = 1; i <= 3; i++) {
+                            for (let j = 0; j < 'abcde'.length - i + 1; j++) {
+                                const combo = 'abcde'.slice(j, j + i);
+                                const filtered = filterNotIn(wordlist, combo.split(''));
+                                results.push({
+                                    param: combo,
+                                    wordsLeft: filtered.length,
+                                    percentFiltered: 100 * (1 - filtered.length / totalWords)
+                                });
+                            }
+                        }
+                        break;
+
+                    case 'MOST FREQUENT':
+                        const uniqueLetters = [...new Set(wordlist.join(''))].sort();
+                        results = uniqueLetters.map(letter => {
+                            const filtered = filterMostFrequent(wordlist, letter);
+                            return {
+                                param: letter,
+                                wordsLeft: filtered.length,
+                                percentFiltered: 100 * (1 - filtered.length / totalWords)
+                            };
+                        });
+                        break;
+
+                    case 'LEAST FREQUENT':
+                        const uniqueLetters2 = [...new Set(wordlist.join(''))].sort();
+                        results = uniqueLetters2.map(letter => {
+                            const filtered = filterLeastFrequent(wordlist, letter);
+                            return {
+                                param: letter,
+                                wordsLeft: filtered.length,
+                                percentFiltered: 100 * (1 - filtered.length / totalWords)
+                            };
+                        });
+                        break;
+
+                    case 'O?':
+                        const filteredO = filterOQuestion(wordlist);
+                        results = [{
+                            param: '-',
+                            wordsLeft: filteredO.length,
+                            percentFiltered: 100 * (1 - filteredO.length / totalWords)
+                        }];
+                        break;
+
+                    case 'CURVED POS.':
+                        const maxLength = Math.max(...wordlist.map(w => w.length));
+                        for (let pos = 0; pos < maxLength; pos++) {
+                            const filtered = filterCurvedPos(wordlist, pos);
+                            results.push({
+                                param: pos.toString(),
+                                wordsLeft: filtered.length,
+                                percentFiltered: 100 * (1 - filtered.length / totalWords)
+                            });
+                        }
+                        break;
+
+                    case 'EEE?':
+                        const filteredEee = filterEee(wordlist);
+                        results = [{
+                            param: '-',
+                            wordsLeft: filteredEee.length,
+                            percentFiltered: 100 * (1 - filteredEee.length / totalWords)
+                        }];
+                        break;
+
+                    case 'EEEFIRST':
+                        const filteredEeeFirst = filterEeeFirst(wordlist);
+                        results = [{
+                            param: '-',
+                            wordsLeft: filteredEeeFirst.length,
+                            percentFiltered: 100 * (1 - filteredEeeFirst.length / totalWords)
+                        }];
+                        break;
+
+                    case 'CONS. TOGETHER':
+                        const filteredCons = filterConsTogether(wordlist);
+                        results = [{
+                            param: '-',
+                            wordsLeft: filteredCons.length,
+                            percentFiltered: 100 * (1 - filteredCons.length / totalWords)
+                        }];
+                        break;
+
+                    case 'COLOUR3':
+                        const filteredColour = filterColour3(wordlist);
+                        results = [{
+                            param: '-',
+                            wordsLeft: filteredColour.length,
+                            percentFiltered: 100 * (1 - filteredColour.length / totalWords)
+                        }];
+                        break;
+                }
+
+                results.sort((a, b) => b.percentFiltered - a.percentFiltered);
+                displayResults(results, totalWords);
+            } catch (error) {
+                showError(error.message);
+            }
+        }
+    </script>
+</body>
+</html> 
