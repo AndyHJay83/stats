@@ -97,7 +97,7 @@
                             <textarea class="form-control" id="wordlist" rows="10" placeholder="Enter words here..."></textarea>
                         </div>
                         <div class="mb-3">
-                            <label for="feature" class="form-label">Select feature to analyze:</label>
+                            <label for="feature-select" class="form-label">Select feature to analyze:</label>
                             <select id="feature-select" class="form-select mb-3">
                                 <option value="LENGTH">LENGTH</option>
                                 <option value="COLOUR3">COLOUR3</option>
@@ -110,12 +110,22 @@
                             </select>
                         </div>
 
+                        <div class="mb-3">
+                            <label for="wordlist-select" class="form-label">Select wordlist:</label>
+                            <select id="wordlist-select" class="form-select mb-3">
+                                <option value="ENUK-Long words Noun.txt">ENUK-Long words Noun</option>
+                                <option value="ENUK-Long words Verb.txt">ENUK-Long words Verb</option>
+                                <option value="ENUK-Long words Adj.txt">ENUK-Long words Adj</option>
+                                <option value="ENUK-Long words Adv.txt">ENUK-Long words Adv</option>
+                            </select>
+                        </div>
+
                         <div class="mb-3" id="param-container" style="display: none;">
                             <label for="param" id="param-label" class="form-label">Enter letters to remove (e.g., abc):</label>
                             <input type="text" class="form-control" id="param" placeholder="Enter letters">
                         </div>
 
-                        <button class="btn btn-primary" onclick="analyzeWords()">Analyze</button>
+                        <button onclick="analyzeWords()" class="btn btn-primary">Analyze</button>
                     </div>
                 </div>
             </div>
@@ -670,6 +680,27 @@
                 paramContainer.style.display = 'none';
             }
         });
+
+        // Add event listener for wordlist selection
+        document.getElementById('wordlist-select').addEventListener('change', function() {
+            loadWordlist(this.value);
+        });
+
+        // Function to load wordlist
+        function loadWordlist(filename) {
+            fetch(filename)
+                .then(response => response.text())
+                .then(text => {
+                    document.getElementById('wordlist').value = text;
+                })
+                .catch(error => {
+                    console.error('Error loading wordlist:', error);
+                    alert('Error loading wordlist. Please try again.');
+                });
+        }
+
+        // Load default wordlist on page load
+        loadWordlist('ENUK-Long words Noun.txt');
 
         // Trigger change event to set initial state
         document.getElementById('feature-select').dispatchEvent(new Event('change'));
