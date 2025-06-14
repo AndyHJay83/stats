@@ -384,17 +384,55 @@
                         break;
 
                     case 'NOT IN':
-                        const lettersToRemove = document.getElementById('param').value.toLowerCase().split('').filter(l => l.trim() !== '');
-                        if (lettersToRemove.length === 0) {
-                            alert('Please enter at least one letter to remove');
-                            return;
+                        const notInCombos = [];
+                        const notInLetters = 'abcdefghijklmnopqrstuvwxyz';
+                        
+                        // Single letters (26 combinations)
+                        for (let i = 0; i < notInLetters.length; i++) {
+                            notInCombos.push(notInLetters[i]);
                         }
-                        const filteredNotIn = filterNotIn(wordlist, lettersToRemove);
-                        results = [{
-                            param: lettersToRemove.join(', '),
-                            wordsLeft: filteredNotIn.length,
-                            percentFiltered: 100 * (1 - filteredNotIn.length / totalWords)
-                        }];
+                        
+                        // Pairs (325 combinations)
+                        for (let i = 0; i < notInLetters.length; i++) {
+                            for (let j = i + 1; j < notInLetters.length; j++) {
+                                notInCombos.push(notInLetters[i] + notInLetters[j]);
+                            }
+                        }
+                        
+                        // Triples (2600 combinations)
+                        for (let i = 0; i < notInLetters.length; i++) {
+                            for (let j = i + 1; j < notInLetters.length; j++) {
+                                for (let k = j + 1; k < notInLetters.length; k++) {
+                                    notInCombos.push(notInLetters[i] + notInLetters[j] + notInLetters[k]);
+                                }
+                            }
+                        }
+
+                        // Calculate results for each combination
+                        const comboResults = notInCombos.map(combo => {
+                            const filtered = wordlist.filter(w => {
+                                return combo.split('').every(l => !w.includes(l));
+                            });
+                            return {
+                                param: combo,
+                                wordsLeft: filtered.length,
+                                percentFiltered: 100 * (1 - filtered.length / totalWords)
+                            };
+                        });
+
+                        // Sort by percent filtered
+                        comboResults.sort((a, b) => b.percentFiltered - a.percentFiltered);
+
+                        // Get top 10 and bottom 10
+                        const top10 = comboResults.slice(0, 10);
+                        const bottom10 = comboResults.slice(-10).reverse();
+
+                        // Combine results with a separator
+                        results = [
+                            ...top10,
+                            { param: '...', wordsLeft: '-', percentFiltered: '-' },
+                            ...bottom10
+                        ];
                         break;
 
                     case 'O?':
