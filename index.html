@@ -408,6 +408,30 @@
                             }
                         }
 
+                        // Four letters (14950 combinations)
+                        for (let i = 0; i < notInLetters.length; i++) {
+                            for (let j = i + 1; j < notInLetters.length; j++) {
+                                for (let k = j + 1; k < notInLetters.length; k++) {
+                                    for (let l = k + 1; l < notInLetters.length; l++) {
+                                        notInCombos.push(notInLetters[i] + notInLetters[j] + notInLetters[k] + notInLetters[l]);
+                                    }
+                                }
+                            }
+                        }
+
+                        // Five letters (65780 combinations)
+                        for (let i = 0; i < notInLetters.length; i++) {
+                            for (let j = i + 1; j < notInLetters.length; j++) {
+                                for (let k = j + 1; k < notInLetters.length; k++) {
+                                    for (let l = k + 1; l < notInLetters.length; l++) {
+                                        for (let m = l + 1; m < notInLetters.length; m++) {
+                                            notInCombos.push(notInLetters[i] + notInLetters[j] + notInLetters[k] + notInLetters[l] + notInLetters[m]);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
                         // Calculate results for each combination
                         const comboResults = notInCombos.map(combo => {
                             const filtered = wordlist.filter(w => {
