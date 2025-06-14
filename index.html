@@ -264,8 +264,10 @@
                     ? result.percentFiltered.toFixed(1) + '%'
                     : result.percentFiltered;
                 
+                const isHighPercentage = typeof result.percentFiltered === 'number' && result.percentFiltered > 99;
+                
                 html += `
-                    <tr>
+                    <tr${isHighPercentage ? ' style="color: #198754;"' : ''}>
                         <td>${result.param}</td>
                         <td>${result.wordsLeft}</td>
                         <td>${percentFiltered}</td>
