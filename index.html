@@ -293,18 +293,51 @@
                         break;
 
                     case 'ABCDE':
-                        const letters = 'abcde';
+                        // Generate all 31 possible combinations of abcde
+                        const allCombos = [];
                         for (let i = 1; i <= 5; i++) {
-                            for (let j = 0; j < letters.length - i + 1; j++) {
-                                const combo = letters.slice(j, j + i);
-                                const filtered = filterAbcde(wordlist, combo.split(''));
-                                results.push({
-                                    param: combo,
-                                    wordsLeft: filtered.length,
-                                    percentFiltered: 100 * (1 - filtered.length / totalWords)
-                                });
+                            const combos = [];
+                            const letters = 'abcde';
+                            for (let j = 0; j < letters.length; j++) {
+                                for (let k = j + 1; k < letters.length; k++) {
+                                    if (i === 1) {
+                                        combos.push(letters[j]);
+                                    } else if (i === 2) {
+                                        combos.push(letters[j] + letters[k]);
+                                    } else if (i === 3) {
+                                        for (let l = k + 1; l < letters.length; l++) {
+                                            combos.push(letters[j] + letters[k] + letters[l]);
+                                        }
+                                    } else if (i === 4) {
+                                        for (let l = k + 1; l < letters.length; l++) {
+                                            for (let m = l + 1; m < letters.length; m++) {
+                                                combos.push(letters[j] + letters[k] + letters[l] + letters[m]);
+                                            }
+                                        }
+                                    } else if (i === 5) {
+                                        combos.push('abcde');
+                                    }
+                                }
                             }
+                            allCombos.push(...combos);
                         }
+
+                        results = allCombos.map(combo => {
+                            // Get letters that should NOT be in the word
+                            const excludedLetters = 'abcde'.split('').filter(l => !combo.includes(l));
+                            const filtered = wordlist.filter(w => {
+                                // Must contain all letters in combo
+                                const hasAllLetters = combo.split('').every(l => w.includes(l));
+                                // Must NOT contain any excluded letters
+                                const hasNoExcludedLetters = excludedLetters.every(l => !w.includes(l));
+                                return hasAllLetters && hasNoExcludedLetters;
+                            });
+                            return {
+                                param: combo,
+                                wordsLeft: filtered.length,
+                                percentFiltered: 100 * (1 - filtered.length / totalWords)
+                            };
+                        });
                         break;
 
                     case 'NOT IN':
@@ -355,19 +388,47 @@
                         break;
 
                     case 'CURVED POS.':
-                        const maxLength = Math.max(...wordlist.map(w => w.length));
-                        for (let pos = 0; pos < maxLength; pos++) {
-                            const filtered = filterCurvedPos(wordlist, pos);
-                            results.push({
-                                param: pos.toString(),
+                        const curvedLetters = new Set('bcdgjopqrsu');
+                        const positions = [...new Set(wordlist.map(w => w.length))].sort((a, b) => a - b);
+                        const allCurvedCombos = [];
+                        
+                        // Generate all possible combinations of curved letters for each position
+                        positions.forEach(pos => {
+                            const combos = [];
+                            const letters = Array.from(curvedLetters);
+                            for (let i = 0; i < letters.length; i++) {
+                                for (let j = i + 1; j < letters.length; j++) {
+                                    combos.push(letters[i] + letters[j]);
+                                }
+                            }
+                            allCurvedCombos.push(...combos.map(combo => ({ pos, combo })));
+                        });
+
+                        results = allCurvedCombos.map(({ pos, combo }) => {
+                            const filtered = wordlist.filter(w => {
+                                if (w.length <= pos) return false;
+                                return combo.split('').includes(w[pos]);
+                            });
+                            return {
+                                param: `Pos ${pos}: ${combo}`,
                                 wordsLeft: filtered.length,
                                 percentFiltered: 100 * (1 - filtered.length / totalWords)
-                            });
-                        }
+                            };
+                        });
+
+                        // Sort by percent filtered and get top/bottom 10
+                        results.sort((a, b) => b.percentFiltered - a.percentFiltered);
+                        const top10 = results.slice(0, 10);
+                        const bottom10 = results.slice(-10);
+                        results = [...top10, { param: '...', wordsLeft: '-', percentFiltered: '-' }, ...bottom10];
                         break;
 
                     case 'EEE?':
-                        const filteredEee = filterEee(wordlist);
+                        const eSoundLetters = new Set('bcdgptvz');
+                        const filteredEee = wordlist.filter(w => {
+                            if (w.length < 2) return false;
+                            return w[1] === 'e' || eSoundLetters.has(w[1]);
+                        });
                         results = [{
                             param: '-',
                             wordsLeft: filteredEee.length,
@@ -376,7 +437,11 @@
                         break;
 
                     case 'EEEFIRST':
-                        const filteredEeeFirst = filterEeeFirst(wordlist);
+                        const eSoundLettersFirst = new Set('bcdgptvz');
+                        const filteredEeeFirst = wordlist.filter(w => {
+                            if (w.length < 1) return false;
+                            return w[0] === 'e' || eSoundLettersFirst.has(w[0]);
+                        });
                         results = [{
                             param: '-',
                             wordsLeft: filteredEeeFirst.length,
@@ -394,7 +459,30 @@
                         break;
 
                     case 'COLOUR3':
-                        const filteredColour = filterColour3(wordlist);
+                        const colourFirstLetters = {
+                            'a': 'aqua',
+                            'b': 'blue',
+                            'c': 'crimson',
+                            'e': 'eggshell',
+                            'g': 'gold',
+                            'i': 'indigo',
+                            'l': 'lilac',
+                            'm': 'magenta',
+                            'n': 'navy',
+                            'o': 'orange',
+                            'p': 'purple',
+                            'r': 'red',
+                            's': 'scarlet',
+                            't': 'teal',
+                            'v': 'violet',
+                            'w': 'white',
+                            'y': 'yellow'
+                        };
+                        const filteredColour = wordlist.filter(w => {
+                            if (w.length < 3) return false;
+                            const thirdLetter = w[2];
+                            return Object.keys(colourFirstLetters).includes(thirdLetter);
+                        });
                         results = [{
                             param: '-',
                             wordsLeft: filteredColour.length,
