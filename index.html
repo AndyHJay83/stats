@@ -244,11 +244,15 @@
             `;
 
             results.forEach(result => {
+                const percentFiltered = typeof result.percentFiltered === 'number' 
+                    ? result.percentFiltered.toFixed(1) + '%'
+                    : result.percentFiltered;
+                
                 html += `
                     <tr>
                         <td>${result.param}</td>
                         <td>${result.wordsLeft}</td>
-                        <td>${result.percentFiltered.toFixed(1)}%</td>
+                        <td>${percentFiltered}</td>
                     </tr>
                 `;
             });
