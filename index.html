@@ -109,6 +109,12 @@
                                 <option value="CONS. TOGETHER">CONS. TOGETHER</option>
                             </select>
                         </div>
+
+                        <div class="mb-3" id="param-container" style="display: none;">
+                            <label for="param" id="param-label" class="form-label">Enter letters to remove (e.g., abc):</label>
+                            <input type="text" class="form-control" id="param" placeholder="Enter letters">
+                        </div>
+
                         <button class="btn btn-primary" onclick="analyzeWords()">Analyze</button>
                     </div>
                 </div>
@@ -565,17 +571,13 @@
 
         // Add event listener for feature selection
         document.getElementById('feature-select').addEventListener('change', function() {
-            const paramInput = document.getElementById('param');
-            const paramLabel = document.getElementById('param-label');
+            const paramContainer = document.getElementById('param-container');
             
             // Show parameter input for features that need it
             if (this.value === 'NOT IN') {
-                paramInput.style.display = 'block';
-                paramLabel.style.display = 'block';
-                paramLabel.textContent = 'Enter letters to remove (e.g., abc):';
+                paramContainer.style.display = 'block';
             } else {
-                paramInput.style.display = 'none';
-                paramLabel.style.display = 'none';
+                paramContainer.style.display = 'none';
             }
         });
 
