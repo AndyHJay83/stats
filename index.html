@@ -562,6 +562,25 @@
                 showError(error.message);
             }
         }
+
+        // Add event listener for feature selection
+        document.getElementById('feature-select').addEventListener('change', function() {
+            const paramInput = document.getElementById('param');
+            const paramLabel = document.getElementById('param-label');
+            
+            // Show parameter input for features that need it
+            if (this.value === 'NOT IN') {
+                paramInput.style.display = 'block';
+                paramLabel.style.display = 'block';
+                paramLabel.textContent = 'Enter letters to remove (e.g., abc):';
+            } else {
+                paramInput.style.display = 'none';
+                paramLabel.style.display = 'none';
+            }
+        });
+
+        // Trigger change event to set initial state
+        document.getElementById('feature-select').dispatchEvent(new Event('change'));
     </script>
 </body>
 </html> 
