@@ -384,80 +384,104 @@
                         break;
 
                     case 'NOT IN':
+                        // Create a Set of words for faster lookups
+                        const wordSet = new Set(wordlist);
+                        
+                        // Create a map of letter positions for each word
+                        const letterPositions = new Map();
+                        wordlist.forEach(word => {
+                            const letters = new Set(word);
+                            letters.forEach(letter => {
+                                if (!letterPositions.has(letter)) {
+                                    letterPositions.set(letter, new Set());
+                                }
+                                letterPositions.get(letter).add(word);
+                            });
+                        });
+
+                        // Function to get words containing any of the given letters
+                        function getWordsWithLetters(letters) {
+                            const wordsWithLetters = new Set();
+                            letters.forEach(letter => {
+                                const words = letterPositions.get(letter);
+                                if (words) {
+                                    words.forEach(word => wordsWithLetters.add(word));
+                                }
+                            });
+                            return wordsWithLetters;
+                        }
+
+                        // Process combinations in batches
+                        const batchSize = 1000;
                         const notInCombos = [];
                         const notInLetters = 'abcdefghijklmnopqrstuvwxyz';
                         
-                        // Single letters (26 combinations)
-                        for (let i = 0; i < notInLetters.length; i++) {
-                            notInCombos.push(notInLetters[i]);
-                        }
-                        
-                        // Pairs (325 combinations)
-                        for (let i = 0; i < notInLetters.length; i++) {
-                            for (let j = i + 1; j < notInLetters.length; j++) {
-                                notInCombos.push(notInLetters[i] + notInLetters[j]);
-                            }
-                        }
-                        
-                        // Triples (2600 combinations)
-                        for (let i = 0; i < notInLetters.length; i++) {
-                            for (let j = i + 1; j < notInLetters.length; j++) {
-                                for (let k = j + 1; k < notInLetters.length; k++) {
-                                    notInCombos.push(notInLetters[i] + notInLetters[j] + notInLetters[k]);
+                        // Generate combinations in batches
+                        function generateCombinations(length) {
+                            const combos = [];
+                            const indices = Array(length).fill(0);
+                            
+                            function generate(index, start) {
+                                if (index === length) {
+                                    combos.push(indices.map(i => notInLetters[i]).join(''));
+                                    return;
+                                }
+                                for (let i = start; i < notInLetters.length; i++) {
+                                    indices[index] = i;
+                                    generate(index + 1, i + 1);
                                 }
                             }
+                            
+                            generate(0, 0);
+                            return combos;
                         }
 
-                        // Four letters (14950 combinations)
-                        for (let i = 0; i < notInLetters.length; i++) {
-                            for (let j = i + 1; j < notInLetters.length; j++) {
-                                for (let k = j + 1; k < notInLetters.length; k++) {
-                                    for (let l = k + 1; l < notInLetters.length; l++) {
-                                        notInCombos.push(notInLetters[i] + notInLetters[j] + notInLetters[k] + notInLetters[l]);
-                                    }
-                                }
+                        // Generate all combinations up to 5 letters
+                        for (let length = 1; length <= 5; length++) {
+                            notInCombos.push(...generateCombinations(length));
+                        }
+
+                        // Process results in batches
+                        const comboResults = [];
+                        let currentBatch = 0;
+
+                        function processBatch() {
+                            const start = currentBatch * batchSize;
+                            const end = Math.min(start + batchSize, notInCombos.length);
+                            
+                            for (let i = start; i < end; i++) {
+                                const combo = notInCombos[i];
+                                const wordsWithLetters = getWordsWithLetters(new Set(combo));
+                                const wordsLeft = wordlist.length - wordsWithLetters.size;
+                                comboResults.push({
+                                    param: combo,
+                                    wordsLeft: wordsLeft,
+                                    percentFiltered: 100 * (1 - wordsLeft / totalWords)
+                                });
+                            }
+
+                            currentBatch++;
+                            
+                            if (currentBatch * batchSize < notInCombos.length) {
+                                // Process next batch in the next frame
+                                requestAnimationFrame(processBatch);
+                            } else {
+                                // All batches processed, sort and display results
+                                comboResults.sort((a, b) => b.percentFiltered - a.percentFiltered);
+                                const top10 = comboResults.slice(0, 10);
+                                const bottom10 = comboResults.slice(-10).reverse();
+                                results = [
+                                    ...top10,
+                                    { param: '...', wordsLeft: '-', percentFiltered: '-' },
+                                    ...bottom10
+                                ];
+                                displayResults(results, totalWords);
                             }
                         }
 
-                        // Five letters (65780 combinations)
-                        for (let i = 0; i < notInLetters.length; i++) {
-                            for (let j = i + 1; j < notInLetters.length; j++) {
-                                for (let k = j + 1; k < notInLetters.length; k++) {
-                                    for (let l = k + 1; l < notInLetters.length; l++) {
-                                        for (let m = l + 1; m < notInLetters.length; m++) {
-                                            notInCombos.push(notInLetters[i] + notInLetters[j] + notInLetters[k] + notInLetters[l] + notInLetters[m]);
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        // Calculate results for each combination
-                        const comboResults = notInCombos.map(combo => {
-                            const filtered = wordlist.filter(w => {
-                                return combo.split('').every(l => !w.includes(l));
-                            });
-                            return {
-                                param: combo,
-                                wordsLeft: filtered.length,
-                                percentFiltered: 100 * (1 - filtered.length / totalWords)
-                            };
-                        });
-
-                        // Sort by percent filtered
-                        comboResults.sort((a, b) => b.percentFiltered - a.percentFiltered);
-
-                        // Get top 10 and bottom 10
-                        const top10 = comboResults.slice(0, 10);
-                        const bottom10 = comboResults.slice(-10).reverse();
-
-                        // Combine results with a separator
-                        results = [
-                            ...top10,
-                            { param: '...', wordsLeft: '-', percentFiltered: '-' },
-                            ...bottom10
-                        ];
-                        break;
+                        // Start processing batches
+                        processBatch();
+                        return; // Exit early as results will be displayed asynchronously
 
                     case 'O?':
                         // Words with 'o'
