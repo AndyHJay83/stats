@@ -384,91 +384,107 @@
                         break;
 
                     case 'NOT IN':
-                        // Create a map of letter frequencies
-                        const letterFreq = new Map();
-                        wordlist.forEach(word => {
-                            const letters = new Set(word);
-                            letters.forEach(letter => {
-                                letterFreq.set(letter, (letterFreq.get(letter) || 0) + 1);
+                        const userInput = document.getElementById('param').value.toLowerCase().trim();
+                        
+                        if (userInput) {
+                            // If user entered letters, use those
+                            const lettersToRemove = userInput.split('').filter(l => l.trim() !== '');
+                            const filtered = wordlist.filter(w => {
+                                return lettersToRemove.every(l => !w.includes(l));
                             });
-                        });
+                            results = [{
+                                param: lettersToRemove.join(', '),
+                                wordsLeft: filtered.length,
+                                percentFiltered: 100 * (1 - filtered.length / totalWords)
+                            }];
+                        } else {
+                            // If no user input, calculate all combinations
+                            // Create a map of letter frequencies
+                            const letterFreq = new Map();
+                            wordlist.forEach(word => {
+                                const letters = new Set(word);
+                                letters.forEach(letter => {
+                                    letterFreq.set(letter, (letterFreq.get(letter) || 0) + 1);
+                                });
+                            });
 
-                        // Get the most common letters
-                        const commonLetters = Array.from(letterFreq.entries())
-                            .sort((a, b) => b[1] - a[1])
-                            .map(([letter]) => letter)
-                            .slice(0, 10); // Take top 10 most common letters
+                            // Get the most common letters
+                            const commonLetters = Array.from(letterFreq.entries())
+                                .sort((a, b) => b[1] - a[1])
+                                .map(([letter]) => letter)
+                                .slice(0, 10); // Take top 10 most common letters
 
-                        const notInCombos = [];
-                        
-                        // Single letters
-                        notInCombos.push(...commonLetters);
-                        
-                        // Pairs of common letters
-                        for (let i = 0; i < commonLetters.length; i++) {
-                            for (let j = i + 1; j < commonLetters.length; j++) {
-                                notInCombos.push(commonLetters[i] + commonLetters[j]);
-                            }
-                        }
-                        
-                        // Triples of common letters
-                        for (let i = 0; i < commonLetters.length; i++) {
-                            for (let j = i + 1; j < commonLetters.length; j++) {
-                                for (let k = j + 1; k < commonLetters.length; k++) {
-                                    notInCombos.push(commonLetters[i] + commonLetters[j] + commonLetters[k]);
+                            const notInCombos = [];
+                            
+                            // Single letters
+                            notInCombos.push(...commonLetters);
+                            
+                            // Pairs of common letters
+                            for (let i = 0; i < commonLetters.length; i++) {
+                                for (let j = i + 1; j < commonLetters.length; j++) {
+                                    notInCombos.push(commonLetters[i] + commonLetters[j]);
                                 }
                             }
-                        }
-
-                        // Four letters
-                        for (let i = 0; i < commonLetters.length; i++) {
-                            for (let j = i + 1; j < commonLetters.length; j++) {
-                                for (let k = j + 1; k < commonLetters.length; k++) {
-                                    for (let l = k + 1; l < commonLetters.length; l++) {
-                                        notInCombos.push(commonLetters[i] + commonLetters[j] + commonLetters[k] + commonLetters[l]);
+                            
+                            // Triples of common letters
+                            for (let i = 0; i < commonLetters.length; i++) {
+                                for (let j = i + 1; j < commonLetters.length; j++) {
+                                    for (let k = j + 1; k < commonLetters.length; k++) {
+                                        notInCombos.push(commonLetters[i] + commonLetters[j] + commonLetters[k]);
                                     }
                                 }
                             }
-                        }
 
-                        // Five letters
-                        for (let i = 0; i < commonLetters.length; i++) {
-                            for (let j = i + 1; j < commonLetters.length; j++) {
-                                for (let k = j + 1; k < commonLetters.length; k++) {
-                                    for (let l = k + 1; l < commonLetters.length; l++) {
-                                        for (let m = l + 1; m < commonLetters.length; m++) {
-                                            notInCombos.push(commonLetters[i] + commonLetters[j] + commonLetters[k] + commonLetters[l] + commonLetters[m]);
+                            // Four letters
+                            for (let i = 0; i < commonLetters.length; i++) {
+                                for (let j = i + 1; j < commonLetters.length; j++) {
+                                    for (let k = j + 1; k < commonLetters.length; k++) {
+                                        for (let l = k + 1; l < commonLetters.length; l++) {
+                                            notInCombos.push(commonLetters[i] + commonLetters[j] + commonLetters[k] + commonLetters[l]);
                                         }
                                     }
                                 }
                             }
-                        }
 
-                        // Calculate results for each combination
-                        const comboResults = notInCombos.map(combo => {
-                            const filtered = wordlist.filter(w => {
-                                return combo.split('').every(l => !w.includes(l));
+                            // Five letters
+                            for (let i = 0; i < commonLetters.length; i++) {
+                                for (let j = i + 1; j < commonLetters.length; j++) {
+                                    for (let k = j + 1; k < commonLetters.length; k++) {
+                                        for (let l = k + 1; l < commonLetters.length; l++) {
+                                            for (let m = l + 1; m < commonLetters.length; m++) {
+                                                notInCombos.push(commonLetters[i] + commonLetters[j] + commonLetters[k] + commonLetters[l] + commonLetters[m]);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Calculate results for each combination
+                            const comboResults = notInCombos.map(combo => {
+                                const filtered = wordlist.filter(w => {
+                                    return combo.split('').every(l => !w.includes(l));
+                                });
+                                return {
+                                    param: combo,
+                                    wordsLeft: filtered.length,
+                                    percentFiltered: 100 * (1 - filtered.length / totalWords)
+                                };
                             });
-                            return {
-                                param: combo,
-                                wordsLeft: filtered.length,
-                                percentFiltered: 100 * (1 - filtered.length / totalWords)
-                            };
-                        });
 
-                        // Sort by percent filtered
-                        comboResults.sort((a, b) => b.percentFiltered - a.percentFiltered);
+                            // Sort by percent filtered
+                            comboResults.sort((a, b) => b.percentFiltered - a.percentFiltered);
 
-                        // Get top 10 and bottom 10
-                        const top10 = comboResults.slice(0, 10);
-                        const bottom10 = comboResults.slice(-10).reverse();
+                            // Get top 10 and bottom 10
+                            const top10 = comboResults.slice(0, 10);
+                            const bottom10 = comboResults.slice(-10).reverse();
 
-                        // Combine results with a separator
-                        results = [
-                            ...top10,
-                            { param: '...', wordsLeft: '-', percentFiltered: '-' },
-                            ...bottom10
-                        ];
+                            // Combine results with a separator
+                            results = [
+                                ...top10,
+                                { param: '...', wordsLeft: '-', percentFiltered: '-' },
+                                ...bottom10
+                            ];
+                        }
                         break;
 
                     case 'O?':
