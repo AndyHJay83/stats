@@ -351,17 +351,46 @@
                         break;
 
                     case 'NOT IN':
-                        for (let i = 1; i <= 3; i++) {
-                            for (let j = 0; j < 'abcde'.length - i + 1; j++) {
-                                const combo = 'abcde'.slice(j, j + i);
-                                const filtered = filterNotIn(wordlist, combo.split(''));
-                                results.push({
-                                    param: combo,
-                                    wordsLeft: filtered.length,
-                                    percentFiltered: 100 * (1 - filtered.length / totalWords)
-                                });
+                        const notInCombos = [];
+                        const notInLetters = 'abcde';
+                        
+                        // Single letters (5 combinations)
+                        for (let i = 0; i < notInLetters.length; i++) {
+                            notInCombos.push(notInLetters[i]);
+                        }
+                        
+                        // Pairs (10 combinations)
+                        for (let i = 0; i < notInLetters.length; i++) {
+                            for (let j = i + 1; j < notInLetters.length; j++) {
+                                notInCombos.push(notInLetters[i] + notInLetters[j]);
                             }
                         }
+                        
+                        // Triples (10 combinations)
+                        for (let i = 0; i < notInLetters.length; i++) {
+                            for (let j = i + 1; j < notInLetters.length; j++) {
+                                for (let k = j + 1; k < notInLetters.length; k++) {
+                                    notInCombos.push(notInLetters[i] + notInLetters[j] + notInLetters[k]);
+                                }
+                            }
+                        }
+
+                        results = notInCombos.map(combo => {
+                            const filtered = wordlist.filter(w => {
+                                return combo.split('').every(l => !w.includes(l));
+                            });
+                            return {
+                                param: combo,
+                                wordsLeft: filtered.length,
+                                percentFiltered: 100 * (1 - filtered.length / totalWords)
+                            };
+                        });
+
+                        // Sort by percent filtered and get top/bottom 10
+                        results.sort((a, b) => b.percentFiltered - a.percentFiltered);
+                        const top10NotIn = results.slice(0, 10);
+                        const bottom10NotIn = results.slice(-10);
+                        results = [...top10NotIn, { param: '...', wordsLeft: '-', percentFiltered: '-' }, ...bottom10NotIn];
                         break;
 
                     case 'MOST FREQUENT':
@@ -405,10 +434,10 @@
                         // Generate all possible combinations of curved letters for each position
                         positions.forEach(pos => {
                             const combos = [];
-                            const letters = Array.from(curvedLetters);
-                            for (let i = 0; i < letters.length; i++) {
-                                for (let j = i + 1; j < letters.length; j++) {
-                                    combos.push(letters[i] + letters[j]);
+                            const curvedLettersArray = Array.from(curvedLetters);
+                            for (let i = 0; i < curvedLettersArray.length; i++) {
+                                for (let j = i + 1; j < curvedLettersArray.length; j++) {
+                                    combos.push(curvedLettersArray[i] + curvedLettersArray[j]);
                                 }
                             }
                             allCurvedCombos.push(...combos.map(combo => ({ pos, combo })));
@@ -428,9 +457,9 @@
 
                         // Sort by percent filtered and get top/bottom 10
                         results.sort((a, b) => b.percentFiltered - a.percentFiltered);
-                        const top10 = results.slice(0, 10);
-                        const bottom10 = results.slice(-10);
-                        results = [...top10, { param: '...', wordsLeft: '-', percentFiltered: '-' }, ...bottom10];
+                        const top10Curved = results.slice(0, 10);
+                        const bottom10Curved = results.slice(-10);
+                        results = [...top10Curved, { param: '...', wordsLeft: '-', percentFiltered: '-' }, ...bottom10Curved];
                         break;
 
                     case 'EEE?':
