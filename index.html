@@ -588,12 +588,38 @@
                         break;
 
                     case 'CONS. TOGETHER':
-                        const filteredCons = filterConsTogether(wordlist);
-                        results = [{
-                            param: '-',
-                            wordsLeft: filteredCons.length,
-                            percentFiltered: 100 * (1 - filteredCons.length / totalWords)
-                        }];
+                        const vowels = new Set('aeiou');
+                        // Words with consecutive consonants
+                        const withConsTogether = wordlist.filter(w => {
+                            for (let i = 0; i < w.length - 1; i++) {
+                                if (!vowels.has(w[i]) && !vowels.has(w[i + 1])) {
+                                    return true;
+                                }
+                            }
+                            return false;
+                        });
+                        // Words without consecutive consonants
+                        const withoutConsTogether = wordlist.filter(w => {
+                            for (let i = 0; i < w.length - 1; i++) {
+                                if (!vowels.has(w[i]) && !vowels.has(w[i + 1])) {
+                                    return false;
+                                }
+                            }
+                            return true;
+                        });
+
+                        results = [
+                            {
+                                param: 'YES',
+                                wordsLeft: withConsTogether.length,
+                                percentFiltered: 100 * (1 - withConsTogether.length / totalWords)
+                            },
+                            {
+                                param: 'NO',
+                                wordsLeft: withoutConsTogether.length,
+                                percentFiltered: 100 * (1 - withoutConsTogether.length / totalWords)
+                            }
+                        ];
                         break;
 
                     case 'COLOUR3':
