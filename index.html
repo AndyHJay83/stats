@@ -384,119 +384,68 @@
                         break;
 
                     case 'NOT IN':
-                        // Create a Set of words for faster lookups
-                        const wordSet = new Set(wordlist);
-                        
-                        // Create a map of letter positions for each word
-                        const letterPositions = new Map();
+                        // Create a map of letter frequencies
+                        const letterFreq = new Map();
                         wordlist.forEach(word => {
                             const letters = new Set(word);
                             letters.forEach(letter => {
-                                if (!letterPositions.has(letter)) {
-                                    letterPositions.set(letter, new Set());
-                                }
-                                letterPositions.get(letter).add(word);
+                                letterFreq.set(letter, (letterFreq.get(letter) || 0) + 1);
                             });
                         });
 
-                        // Function to get words containing any of the given letters
-                        function getWordsWithLetters(letters) {
-                            const wordsWithLetters = new Set();
-                            letters.forEach(letter => {
-                                const words = letterPositions.get(letter);
-                                if (words) {
-                                    words.forEach(word => wordsWithLetters.add(word));
-                                }
-                            });
-                            return wordsWithLetters;
-                        }
+                        // Get the most common letters
+                        const commonLetters = Array.from(letterFreq.entries())
+                            .sort((a, b) => b[1] - a[1])
+                            .map(([letter]) => letter)
+                            .slice(0, 10); // Take top 10 most common letters
 
-                        // Process combinations in batches
-                        const batchSize = 1000;
                         const notInCombos = [];
-                        const notInLetters = 'abcdefghijklmnopqrstuvwxyz';
                         
-                        // Generate combinations iteratively
-                        function generateCombinations(length) {
-                            const combos = [];
-                            const indices = Array(length).fill(0);
-                            
-                            // Initialize indices
-                            for (let i = 0; i < length; i++) {
-                                indices[i] = i;
+                        // Single letters
+                        notInCombos.push(...commonLetters);
+                        
+                        // Pairs of common letters
+                        for (let i = 0; i < commonLetters.length; i++) {
+                            for (let j = i + 1; j < commonLetters.length; j++) {
+                                notInCombos.push(commonLetters[i] + commonLetters[j]);
                             }
-                            
-                            while (true) {
-                                // Add current combination
-                                combos.push(indices.map(i => notInLetters[i]).join(''));
-                                
-                                // Find the rightmost index that can be incremented
-                                let i = length - 1;
-                                while (i >= 0 && indices[i] === notInLetters.length - length + i) {
-                                    i--;
-                                }
-                                
-                                // If no index can be incremented, we're done
-                                if (i < 0) break;
-                                
-                                // Increment the found index
-                                indices[i]++;
-                                
-                                // Reset all indices to the right
-                                for (let j = i + 1; j < length; j++) {
-                                    indices[j] = indices[j - 1] + 1;
+                        }
+                        
+                        // Triples of common letters
+                        for (let i = 0; i < commonLetters.length; i++) {
+                            for (let j = i + 1; j < commonLetters.length; j++) {
+                                for (let k = j + 1; k < commonLetters.length; k++) {
+                                    notInCombos.push(commonLetters[i] + commonLetters[j] + commonLetters[k]);
                                 }
                             }
-                            
-                            return combos;
                         }
 
-                        // Generate all combinations up to 5 letters
-                        for (let length = 1; length <= 5; length++) {
-                            notInCombos.push(...generateCombinations(length));
-                        }
+                        // Calculate results for each combination
+                        const comboResults = notInCombos.map(combo => {
+                            const filtered = wordlist.filter(w => {
+                                return combo.split('').every(l => !w.includes(l));
+                            });
+                            return {
+                                param: combo,
+                                wordsLeft: filtered.length,
+                                percentFiltered: 100 * (1 - filtered.length / totalWords)
+                            };
+                        });
 
-                        // Process results in batches
-                        const comboResults = [];
-                        let currentBatch = 0;
+                        // Sort by percent filtered
+                        comboResults.sort((a, b) => b.percentFiltered - a.percentFiltered);
 
-                        function processBatch() {
-                            const start = currentBatch * batchSize;
-                            const end = Math.min(start + batchSize, notInCombos.length);
-                            
-                            for (let i = start; i < end; i++) {
-                                const combo = notInCombos[i];
-                                const wordsWithLetters = getWordsWithLetters(new Set(combo));
-                                const wordsLeft = wordlist.length - wordsWithLetters.size;
-                                comboResults.push({
-                                    param: combo,
-                                    wordsLeft: wordsLeft,
-                                    percentFiltered: 100 * (1 - wordsLeft / totalWords)
-                                });
-                            }
+                        // Get top 10 and bottom 10
+                        const top10 = comboResults.slice(0, 10);
+                        const bottom10 = comboResults.slice(-10).reverse();
 
-                            currentBatch++;
-                            
-                            if (currentBatch * batchSize < notInCombos.length) {
-                                // Process next batch in the next frame
-                                requestAnimationFrame(processBatch);
-                            } else {
-                                // All batches processed, sort and display results
-                                comboResults.sort((a, b) => b.percentFiltered - a.percentFiltered);
-                                const top10 = comboResults.slice(0, 10);
-                                const bottom10 = comboResults.slice(-10).reverse();
-                                results = [
-                                    ...top10,
-                                    { param: '...', wordsLeft: '-', percentFiltered: '-' },
-                                    ...bottom10
-                                ];
-                                displayResults(results, totalWords);
-                            }
-                        }
-
-                        // Start processing batches
-                        processBatch();
-                        return; // Exit early as results will be displayed asynchronously
+                        // Combine results with a separator
+                        results = [
+                            ...top10,
+                            { param: '...', wordsLeft: '-', percentFiltered: '-' },
+                            ...bottom10
+                        ];
+                        break;
 
                     case 'O?':
                         // Words with 'o'
@@ -686,4 +635,5 @@
         document.getElementById('feature-select').dispatchEvent(new Event('change'));
     </script>
 </body>
+</html> 
 </html> 
