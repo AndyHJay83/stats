@@ -642,16 +642,33 @@
                             'w': 'white',
                             'y': 'yellow'
                         };
-                        const filteredColour = wordlist.filter(w => {
+                        
+                        // Words with a color's first letter in third position
+                        const withColour = wordlist.filter(w => {
                             if (w.length < 3) return false;
                             const thirdLetter = w[2];
                             return Object.keys(colourFirstLetters).includes(thirdLetter);
                         });
-                        results = [{
-                            param: '-',
-                            wordsLeft: filteredColour.length,
-                            percentFiltered: 100 * (1 - filteredColour.length / totalWords)
-                        }];
+                        
+                        // Words without a color's first letter in third position
+                        const withoutColour = wordlist.filter(w => {
+                            if (w.length < 3) return true;
+                            const thirdLetter = w[2];
+                            return !Object.keys(colourFirstLetters).includes(thirdLetter);
+                        });
+
+                        results = [
+                            {
+                                param: 'YES',
+                                wordsLeft: withColour.length,
+                                percentFiltered: 100 * (1 - withColour.length / totalWords)
+                            },
+                            {
+                                param: 'NO',
+                                wordsLeft: withoutColour.length,
+                                percentFiltered: 100 * (1 - withoutColour.length / totalWords)
+                            }
+                        ];
                         break;
                 }
 
