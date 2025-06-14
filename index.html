@@ -416,23 +416,38 @@
                         const notInCombos = [];
                         const notInLetters = 'abcdefghijklmnopqrstuvwxyz';
                         
-                        // Generate combinations in batches
+                        // Generate combinations iteratively
                         function generateCombinations(length) {
                             const combos = [];
                             const indices = Array(length).fill(0);
                             
-                            function generate(index, start) {
-                                if (index === length) {
-                                    combos.push(indices.map(i => notInLetters[i]).join(''));
-                                    return;
+                            // Initialize indices
+                            for (let i = 0; i < length; i++) {
+                                indices[i] = i;
+                            }
+                            
+                            while (true) {
+                                // Add current combination
+                                combos.push(indices.map(i => notInLetters[i]).join(''));
+                                
+                                // Find the rightmost index that can be incremented
+                                let i = length - 1;
+                                while (i >= 0 && indices[i] === notInLetters.length - length + i) {
+                                    i--;
                                 }
-                                for (let i = start; i < notInLetters.length; i++) {
-                                    indices[index] = i;
-                                    generate(index + 1, i + 1);
+                                
+                                // If no index can be incremented, we're done
+                                if (i < 0) break;
+                                
+                                // Increment the found index
+                                indices[i]++;
+                                
+                                // Reset all indices to the right
+                                for (let j = i + 1; j < length; j++) {
+                                    indices[j] = indices[j - 1] + 1;
                                 }
                             }
                             
-                            generate(0, 0);
                             return combos;
                         }
 
