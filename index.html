@@ -113,10 +113,10 @@
                         <div class="mb-3">
                             <label for="wordlist-select" class="form-label">Select wordlist:</label>
                             <select id="wordlist-select" class="form-select mb-3">
-                                <option value="ENUK-Long words Noun.txt">ENUK-Long words Noun</option>
-                                <option value="ENUK-Long words Verb.txt">ENUK-Long words Verb</option>
-                                <option value="ENUK-Long words Adj.txt">ENUK-Long words Adj</option>
-                                <option value="ENUK-Long words Adv.txt">ENUK-Long words Adv</option>
+                                <option value="wordlists/ENUK-Long words Noun.txt">ENUK-Long words Noun</option>
+                                <option value="wordlists/ENUK-Long words Verb.txt">ENUK-Long words Verb</option>
+                                <option value="wordlists/ENUK-Long words Adj.txt">ENUK-Long words Adj</option>
+                                <option value="wordlists/ENUK-Long words Adv.txt">ENUK-Long words Adv</option>
                             </select>
                         </div>
 
@@ -151,7 +151,7 @@
         // Load default wordlist when page loads
         window.addEventListener('load', async () => {
             try {
-                const response = await fetch('ENUK-Long words Noun.txt');
+                const response = await fetch('wordlists/ENUK-Long words Noun.txt');
                 if (!response.ok) {
                     throw new Error('Failed to load wordlist');
                 }
@@ -700,7 +700,7 @@
         }
 
         // Load default wordlist on page load
-        loadWordlist('ENUK-Long words Noun.txt');
+        loadWordlist('wordlists/ENUK-Long words Noun.txt');
 
         // Trigger change event to set initial state
         document.getElementById('feature-select').dispatchEvent(new Event('change'));
