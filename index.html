@@ -420,6 +420,30 @@
                             }
                         }
 
+                        // Four letters
+                        for (let i = 0; i < commonLetters.length; i++) {
+                            for (let j = i + 1; j < commonLetters.length; j++) {
+                                for (let k = j + 1; k < commonLetters.length; k++) {
+                                    for (let l = k + 1; l < commonLetters.length; l++) {
+                                        notInCombos.push(commonLetters[i] + commonLetters[j] + commonLetters[k] + commonLetters[l]);
+                                    }
+                                }
+                            }
+                        }
+
+                        // Five letters
+                        for (let i = 0; i < commonLetters.length; i++) {
+                            for (let j = i + 1; j < commonLetters.length; j++) {
+                                for (let k = j + 1; k < commonLetters.length; k++) {
+                                    for (let l = k + 1; l < commonLetters.length; l++) {
+                                        for (let m = l + 1; m < commonLetters.length; m++) {
+                                            notInCombos.push(commonLetters[i] + commonLetters[j] + commonLetters[k] + commonLetters[l] + commonLetters[m]);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
                         // Calculate results for each combination
                         const comboResults = notInCombos.map(combo => {
                             const filtered = wordlist.filter(w => {
@@ -635,5 +659,4 @@
         document.getElementById('feature-select').dispatchEvent(new Event('change'));
     </script>
 </body>
-</html> 
 </html> 
