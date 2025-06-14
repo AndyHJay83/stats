@@ -422,12 +422,23 @@
                         break;
 
                     case 'O?':
-                        const filteredO = filterOQuestion(wordlist);
-                        results = [{
-                            param: '-',
-                            wordsLeft: filteredO.length,
-                            percentFiltered: 100 * (1 - filteredO.length / totalWords)
-                        }];
+                        // Words with 'o'
+                        const withO = wordlist.filter(w => w.includes('o'));
+                        // Words without 'o'
+                        const withoutO = wordlist.filter(w => !w.includes('o'));
+
+                        results = [
+                            {
+                                param: 'YES',
+                                wordsLeft: withO.length,
+                                percentFiltered: 100 * (1 - withO.length / totalWords)
+                            },
+                            {
+                                param: 'NO',
+                                wordsLeft: withoutO.length,
+                                percentFiltered: 100 * (1 - withoutO.length / totalWords)
+                            }
+                        ];
                         break;
 
                     case 'CURVED POS.':
